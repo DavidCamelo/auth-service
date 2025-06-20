@@ -1,9 +1,9 @@
 package com.davidcamelo.auth.dto;
 
-import lombok.Data;
+import lombok.Builder;
 
-@Data
-public class AuthRequest {
-    private String username;
-    private String password;
-}
+@Builder
+public record AuthRequest (
+        String username,
+        String password
+) { }

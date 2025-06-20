@@ -1,17 +1,13 @@
 package com.davidcamelo.auth.service.impl;
 
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.algorithms.Algorithm;
 import com.davidcamelo.auth.service.JwtService;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Service
 public class JwtServiceImpl implements JwtService {
@@ -25,31 +21,34 @@ public class JwtServiceImpl implements JwtService {
     @Value("${jwt.refresh-token-expiration-ms}")
     private long refreshTokenExpiration;
 
-    private SecretKey getSigningKey() {
-        return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+    private Algorithm getAlgorithm () {
+        return Algorithm.HMAC256(secret);
     }
 
     @Override
     public String generateAccessToken(String username, List<String> roles) {
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("roles", roles);
-
-        return Jwts.builder()
-                .subject(username)
-                .claims(claims)
-                .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + accessTokenExpiration))
-                .signWith(getSigningKey())
-                .compact();
+        return JWT.create()
+                .withSubject(username)
+                .withClaim("roles", roles)
+                .withIssuedAt(new Date(System.currentTimeMillis()))
+                .withExpiresAt(new Date(System.currentTimeMillis() + accessTokenExpiration))
+                .sign(getAlgorithm());
     }
 
     @Override
     public String generateRefreshToken(String username) {
-        return Jwts.builder()
-                .subject(username)
-                .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + refreshTokenExpiration))
-                .signWith(getSigningKey())
-                .compact();
+        return JWT.create()
+                .withSubject(username)
+                .withIssuedAt(new Date(System.currentTimeMillis()))
+                .withExpiresAt(new Date(System.currentTimeMillis() + refreshTokenExpiration))
+                .sign(getAlgorithm());
+    }
+
+    @Override
+    public String validateRefreshTokenAndGetUsername(String token) {
+        return JWT.require(getAlgorithm())
+                .build()
+                .verify(token)
+                .getSubject();
     }
 }
