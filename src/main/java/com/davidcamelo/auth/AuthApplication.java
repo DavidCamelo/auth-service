@@ -10,7 +10,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @Slf4j
 @SpringBootApplication
 @OpenAPIDefinition(
-		servers = { @Server(url = "/auth", description = "User Service URL"), @Server(url = "/", description = "Default Server") },
+		servers = { @Server(url = "/auth", description = "Auth Service URL"), @Server(url = "/", description = "Default Server") },
 		info = @Info(title = "OpenAPI definition", version = "v0"))
 public class AuthApplication {
 
