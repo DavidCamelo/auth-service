@@ -6,9 +6,11 @@ import io.swagger.v3.oas.annotations.servers.Server;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 
 @Slf4j
 @SpringBootApplication
+@ConfigurationPropertiesScan
 @OpenAPIDefinition(
 		servers = { @Server(url = "/auth", description = "Auth Service URL"), @Server(url = "/", description = "Default Server") },
 		info = @Info(title = "OpenAPI definition", version = "v0"))
