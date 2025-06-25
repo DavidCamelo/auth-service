@@ -29,7 +29,7 @@ public class AuthController {
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(@RequestBody AuthTokenRequest authTokenRequest) {
         authService.logout(authTokenRequest);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok().build();
     }
 
     @Operation(summary = "refresh", description = "Refresh token")
