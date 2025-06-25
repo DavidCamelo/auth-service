@@ -3,6 +3,7 @@ package com.davidcamelo.auth.service.impl;
 import com.davidcamelo.auth.config.JWTProperties;
 import com.davidcamelo.auth.dto.AuthRequest;
 import com.davidcamelo.auth.dto.AuthResponse;
+import com.davidcamelo.auth.dto.AuthTokenRequest;
 import com.davidcamelo.auth.dto.ErrorDTO;
 import com.davidcamelo.auth.dto.RefreshTokenRequest;
 import com.davidcamelo.auth.dto.RefreshTokenResponse;
@@ -44,6 +45,10 @@ public class AuthServiceImpl implements AuthService {
         } else {
             throw new AuthException(ErrorDTO.builder().message("Authentication failed").timestamp(new Date()).build());
         }
+    }
+
+    @Override
+    public void logout(AuthTokenRequest authTokenRequest) {
     }
 
     @Override

@@ -2,6 +2,7 @@ package com.davidcamelo.auth.api;
 
 import com.davidcamelo.auth.dto.AuthRequest;
 import com.davidcamelo.auth.dto.AuthResponse;
+import com.davidcamelo.auth.dto.AuthTokenRequest;
 import com.davidcamelo.auth.dto.RefreshTokenRequest;
 import com.davidcamelo.auth.dto.RefreshTokenResponse;
 import com.davidcamelo.auth.service.AuthService;
@@ -23,6 +24,13 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@RequestBody AuthRequest authRequest) {
         return ResponseEntity.ok(authService.login(authRequest));
+    }
+
+    @Operation(summary = "logout", description = "User logout")
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(@RequestBody AuthTokenRequest authTokenRequest) {
+        authService.logout(authTokenRequest);
+        return ResponseEntity.noContent().build();
     }
 
     @Operation(summary = "refresh", description = "Refresh token")
