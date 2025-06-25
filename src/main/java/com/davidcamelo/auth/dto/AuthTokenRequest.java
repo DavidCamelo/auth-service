@@ -4,5 +4,5 @@ import lombok.Builder;
 
 @Builder
 public record AuthTokenRequest(
-        String authToken
+        String accessToken
 ) { }
