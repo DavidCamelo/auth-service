@@ -4,7 +4,6 @@ import com.davidcamelo.auth.dto.AuthRequest;
 import com.davidcamelo.auth.dto.AuthResponse;
 import com.davidcamelo.auth.dto.AuthTokenRequest;
 import com.davidcamelo.auth.dto.RefreshTokenRequest;
-import com.davidcamelo.auth.dto.RefreshTokenResponse;
 import com.davidcamelo.auth.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -35,7 +34,7 @@ public class AuthController {
 
     @Operation(summary = "refresh", description = "Refresh token")
     @PostMapping("/refresh")
-    public ResponseEntity<RefreshTokenResponse> refresh(@RequestBody RefreshTokenRequest refreshTokenRequest) {
+    public ResponseEntity<AuthResponse> refresh(@RequestBody RefreshTokenRequest refreshTokenRequest) {
         return ResponseEntity.ok(authService.refreshToken(refreshTokenRequest));
     }
 }

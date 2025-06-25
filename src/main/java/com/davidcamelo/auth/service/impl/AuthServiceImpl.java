@@ -6,7 +6,6 @@ import com.davidcamelo.auth.dto.AuthResponse;
 import com.davidcamelo.auth.dto.AuthTokenRequest;
 import com.davidcamelo.auth.dto.ErrorDTO;
 import com.davidcamelo.auth.dto.RefreshTokenRequest;
-import com.davidcamelo.auth.dto.RefreshTokenResponse;
 import com.davidcamelo.auth.error.AuthException;
 import com.davidcamelo.auth.service.AuthService;
 import com.davidcamelo.auth.service.JwtService;
@@ -37,7 +36,7 @@ public class AuthServiceImpl implements AuthService {
                     .map(GrantedAuthority::getAuthority)
                     .collect(Collectors.toList());
             return AuthResponse.builder()
-                    .accessTokenExpiration(jwtProperties.accessTokenExpiration() - 1000)
+                    .accessTokenExpiration(jwtProperties.accessTokenExpiration())
                     .refreshTokenExpiration(jwtProperties.refreshTokenExpiration())
                     .accessToken(jwtService.generateAccessToken(username, roles))
                     .refreshToken(jwtService.generateRefreshToken(username))
@@ -52,7 +51,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public RefreshTokenResponse refreshToken(RefreshTokenRequest refreshTokenRequest) {
+    public AuthResponse refreshToken(RefreshTokenRequest refreshTokenRequest) {
         try {
             var username = jwtService.validateRefreshTokenAndGetUsername(refreshTokenRequest.refreshToken());
             var userDetails = userDetailsService.loadUserByUsername(username);
@@ -60,7 +59,10 @@ public class AuthServiceImpl implements AuthService {
                     .map(GrantedAuthority::getAuthority)
                     .collect(Collectors.toList());
             var newAccessToken = jwtService.generateAccessToken(username, roles);
-            return RefreshTokenResponse.builder().accessToken(newAccessToken).build();
+            return AuthResponse.builder()
+                    .accessTokenExpiration(jwtProperties.accessTokenExpiration())
+                    .accessToken(jwtService.generateAccessToken(username, roles))
+                    .build();
         } catch (Exception e) {
             throw new AuthException(ErrorDTO.builder().message("Invalid refresh token").timestamp(new Date()).build());
         }
