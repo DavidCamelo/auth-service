@@ -3,28 +3,27 @@ package com.davidcamelo.auth.service.impl;
 import com.davidcamelo.auth.config.JWTProperties;
 import com.davidcamelo.auth.dto.AuthRequest;
 import com.davidcamelo.auth.dto.AuthResponse;
-import com.davidcamelo.auth.dto.AuthTokenRequest;
 import com.davidcamelo.auth.dto.ErrorDTO;
 import com.davidcamelo.auth.dto.RefreshTokenRequest;
+import com.davidcamelo.auth.entity.RefreshToken;
 import com.davidcamelo.auth.error.AuthException;
 import com.davidcamelo.auth.service.AuthService;
 import com.davidcamelo.auth.service.JwtService;
+import com.davidcamelo.auth.service.RefreshTokenService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
     private final AuthenticationManager authenticationManager;
-    private final UserDetailsService userDetailsService;
     private final JwtService jwtService;
+    private final RefreshTokenService refreshTokenService;
     private final JWTProperties jwtProperties;
 
     @Override
@@ -34,12 +33,12 @@ public class AuthServiceImpl implements AuthService {
             var username = authRequest.username();
             var roles = authentication.getAuthorities().stream()
                     .map(GrantedAuthority::getAuthority)
-                    .collect(Collectors.toList());
+                    .toList();
             return AuthResponse.builder()
                     .accessTokenExpiration(jwtProperties.accessTokenExpiration())
                     .refreshTokenExpiration(jwtProperties.refreshTokenExpiration())
                     .accessToken(jwtService.generateAccessToken(username, roles))
-                    .refreshToken(jwtService.generateRefreshToken(username))
+                    .refreshToken(refreshTokenService.createRefreshToken(username).getToken())
                     .build();
         } else {
             throw new AuthException(ErrorDTO.builder().message("Authentication failed").timestamp(new Date()).build());
@@ -47,24 +46,21 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public void logout(AuthTokenRequest authTokenRequest) {
+    public void logout(RefreshTokenRequest refreshTokenRequest) {
+        refreshTokenService.deleteRefreshToken(refreshTokenRequest.refreshToken());
     }
 
     @Override
     public AuthResponse refreshToken(RefreshTokenRequest refreshTokenRequest) {
-        try {
-            var username = jwtService.validateRefreshTokenAndGetUsername(refreshTokenRequest.refreshToken());
-            var userDetails = userDetailsService.loadUserByUsername(username);
-            var roles = userDetails.getAuthorities().stream()
-                    .map(GrantedAuthority::getAuthority)
-                    .collect(Collectors.toList());
-            var newAccessToken = jwtService.generateAccessToken(username, roles);
-            return AuthResponse.builder()
-                    .accessTokenExpiration(jwtProperties.accessTokenExpiration())
-                    .accessToken(jwtService.generateAccessToken(username, roles))
-                    .build();
-        } catch (Exception e) {
-            throw new AuthException(ErrorDTO.builder().message("Invalid refresh token").timestamp(new Date()).build());
-        }
+        return refreshTokenService.verifyExpiration(refreshTokenRequest.refreshToken())
+                .map(RefreshToken::getUser)
+                .map(user -> AuthResponse.builder()
+                        .accessTokenExpiration(jwtProperties.accessTokenExpiration())
+                        .accessToken(jwtService.generateAccessToken(user.getUsername(), user.getRoles().stream().toList()))
+                        .build())
+                .orElseThrow(() -> {
+                    refreshTokenService.deleteRefreshToken(refreshTokenRequest.refreshToken());
+                    return new AuthException(ErrorDTO.builder().message("Invalid refresh token").timestamp(new Date()).build());
+                });
     }
 }

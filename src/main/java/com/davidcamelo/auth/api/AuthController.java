@@ -2,7 +2,6 @@ package com.davidcamelo.auth.api;
 
 import com.davidcamelo.auth.dto.AuthRequest;
 import com.davidcamelo.auth.dto.AuthResponse;
-import com.davidcamelo.auth.dto.AuthTokenRequest;
 import com.davidcamelo.auth.dto.RefreshTokenRequest;
 import com.davidcamelo.auth.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -11,10 +10,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @Tag(name = "Auth API")
 @RestController
+@RequestMapping("/user")
 @RequiredArgsConstructor
 public class AuthController {
     private final AuthService authService;
@@ -27,8 +28,8 @@ public class AuthController {
 
     @Operation(summary = "logout", description = "User logout")
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(@RequestBody AuthTokenRequest authTokenRequest) {
-        authService.logout(authTokenRequest);
+    public ResponseEntity<Void> logout(@RequestBody RefreshTokenRequest refreshTokenRequest) {
+        authService.logout(refreshTokenRequest);
         return ResponseEntity.ok().build();
     }
 
