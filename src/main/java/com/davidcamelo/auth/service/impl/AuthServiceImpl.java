@@ -1,12 +1,12 @@
 package com.davidcamelo.auth.service.impl;
 
 import com.davidcamelo.auth.config.JWTProperties;
-import com.davidcamelo.auth.dto.AuthRequest;
 import com.davidcamelo.auth.dto.AuthResponse;
 import com.davidcamelo.auth.dto.ErrorDTO;
-import com.davidcamelo.auth.dto.RefreshTokenRequest;
 import com.davidcamelo.auth.entity.RefreshToken;
+import com.davidcamelo.auth.entity.User;
 import com.davidcamelo.auth.error.AuthException;
+import com.davidcamelo.auth.repository.UserRepository;
 import com.davidcamelo.auth.service.AuthService;
 import com.davidcamelo.auth.service.JwtService;
 import com.davidcamelo.auth.service.RefreshTokenService;
@@ -14,23 +14,42 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
     private final AuthenticationManager authenticationManager;
-    private final JwtService jwtService;
     private final RefreshTokenService refreshTokenService;
+    private final UserRepository userRepository;
+    private final JwtService jwtService;
+    private final PasswordEncoder passwordEncoder;
     private final JWTProperties jwtProperties;
 
     @Override
-    public AuthResponse login(AuthRequest authRequest) {
-        var authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(authRequest.username(), authRequest.password()));
+    public AuthResponse signUp(String name, String lastName, String email, String password) {
+        if (userRepository.findByEmail(email).isEmpty()) {
+            User user = new User();
+            user.setName(name);
+            user.setLastName(lastName);
+            user.setEmail(email);
+            user.setUsername(email.split("@")[0]);
+            user.setPassword(passwordEncoder.encode(password));
+            user.setRoles(Set.of("ROLE_USER"));
+            userRepository.save(user);
+            return login(email, password);
+        }
+        throw new AuthException(ErrorDTO.builder().message("User already exists").timestamp(new Date()).build());
+    }
+
+    @Override
+    public AuthResponse login(String username, String password) {
+        var authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
         if (authentication.isAuthenticated()) {
-            var username = authRequest.username();
             var roles = authentication.getAuthorities().stream()
                     .map(GrantedAuthority::getAuthority)
                     .toList();
@@ -46,20 +65,20 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public void logout(RefreshTokenRequest refreshTokenRequest) {
-        refreshTokenService.deleteRefreshToken(refreshTokenRequest.refreshToken());
+    public void logout(String refreshToken) {
+        refreshTokenService.deleteRefreshToken(refreshToken);
     }
 
     @Override
-    public AuthResponse refreshToken(RefreshTokenRequest refreshTokenRequest) {
-        return refreshTokenService.verifyExpiration(refreshTokenRequest.refreshToken())
+    public AuthResponse refreshToken(String refreshToken) {
+        return refreshTokenService.verifyExpiration(refreshToken)
                 .map(RefreshToken::getUser)
                 .map(user -> AuthResponse.builder()
                         .accessTokenExpiration(jwtProperties.accessTokenExpiration())
                         .accessToken(jwtService.generateAccessToken(user.getUsername(), user.getRoles().stream().toList()))
                         .build())
                 .orElseThrow(() -> {
-                    refreshTokenService.deleteRefreshToken(refreshTokenRequest.refreshToken());
+                    refreshTokenService.deleteRefreshToken(refreshToken);
                     return new AuthException(ErrorDTO.builder().message("Invalid refresh token").timestamp(new Date()).build());
                 });
     }

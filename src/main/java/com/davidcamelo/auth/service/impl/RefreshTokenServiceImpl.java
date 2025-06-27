@@ -42,6 +42,10 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     }
 
     private User getUserByUsername(String username) {
+        if (username.contains("@")) {
+            return userRepository.findByEmail(username)
+                    .orElseThrow(() -> new AuthException(ErrorDTO.builder().message("User not found").timestamp(new Date()).build()));
+        }
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new AuthException(ErrorDTO.builder().message("User not found").timestamp(new Date()).build()));
     }

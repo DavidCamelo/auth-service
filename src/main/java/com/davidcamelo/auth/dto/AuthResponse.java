@@ -6,8 +6,9 @@ import lombok.Builder;
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record AuthResponse (
-        long accessTokenExpiration,
-        long refreshTokenExpiration,
+        UserDTO user,
+        Long accessTokenExpiration,
+        Long refreshTokenExpiration,
         String accessToken,
         String refreshToken
 ) { }

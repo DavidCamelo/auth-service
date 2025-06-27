@@ -18,6 +18,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
+import java.util.Optional;
 import java.util.Set;
 
 @Configuration
@@ -27,7 +28,7 @@ public class SecurityConfig {
     // Database-driven UserDetailsService
     @Bean
     public UserDetailsService userDetailsService(UserRepository userRepository) {
-        return username -> userRepository.findByUsername(username)
+        return username -> findUserByUsername(userRepository, username)
                 .map(user -> new org.springframework.security.core.userdetails.User(
                         user.getUsername(),
                         user.getPassword(),
@@ -46,14 +47,14 @@ public class SecurityConfig {
     @Bean
     CommandLineRunner commandLineRunner(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         return args -> {
-            if (userRepository.findByUsername("user").isEmpty()) {
+            if (findUserByUsername(userRepository, "user").isEmpty()) {
                 User user = new User();
                 user.setUsername("user");
                 user.setPassword(passwordEncoder.encode("password"));
                 user.setRoles(Set.of("ROLE_USER"));
                 userRepository.save(user);
             }
-            if (userRepository.findByUsername("admin").isEmpty()) {
+            if (findUserByUsername(userRepository, "admin").isEmpty()) {
                 User admin = new User();
                 admin.setUsername("admin");
                 admin.setPassword(passwordEncoder.encode("password"));
@@ -78,5 +79,12 @@ public class SecurityConfig {
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
+    }
+
+    private Optional<User> findUserByUsername(UserRepository userRepository, String username) {
+        if (username.contains("@")) {
+            return userRepository.findByEmail(username);
+        }
+        return userRepository.findByUsername(username);
     }
 }

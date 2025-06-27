@@ -29,7 +29,14 @@ public class User {
     private Long id;
 
     @Column(unique = true, nullable = false)
+    private String email;
+
+    @Column(unique = true, nullable = false)
     private String username;
+
+    private String name;
+
+    private String lastName;
 
     @Column(nullable = false)
     private String password;
@@ -38,4 +45,5 @@ public class User {
     @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
     @Column(name = "role")
     private Set<String> roles;
+
 }
