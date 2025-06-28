@@ -15,7 +15,7 @@ import java.util.List;
 public class JwtServiceImpl implements JwtService {
     private final JWTProperties jwtProperties;
 
-    private Algorithm getAlgorithm () {
+    private Algorithm getAlgorithm() {
         return Algorithm.HMAC256(jwtProperties.secret());
     }
 

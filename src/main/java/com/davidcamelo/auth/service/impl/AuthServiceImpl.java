@@ -4,8 +4,10 @@ import com.davidcamelo.auth.config.JWTProperties;
 import com.davidcamelo.auth.dto.AuthResponse;
 import com.davidcamelo.auth.dto.ErrorDTO;
 import com.davidcamelo.auth.entity.RefreshToken;
+import com.davidcamelo.auth.entity.Role;
 import com.davidcamelo.auth.entity.User;
 import com.davidcamelo.auth.error.AuthException;
+import com.davidcamelo.auth.repository.RoleRepository;
 import com.davidcamelo.auth.repository.UserRepository;
 import com.davidcamelo.auth.service.AuthService;
 import com.davidcamelo.auth.service.JwtService;
@@ -26,6 +28,7 @@ public class AuthServiceImpl implements AuthService {
     private final AuthenticationManager authenticationManager;
     private final RefreshTokenService refreshTokenService;
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
     private final JWTProperties jwtProperties;
@@ -39,7 +42,8 @@ public class AuthServiceImpl implements AuthService {
             user.setEmail(email);
             user.setUsername(email.split("@")[0]);
             user.setPassword(passwordEncoder.encode(password));
-            user.setRoles(Set.of("ROLE_USER"));
+            var userRole = roleRepository.findByName("ROLE_USER").orElseGet(() -> roleRepository.save(Role.builder().name("ROLE_USER").build()));
+            user.setRoles(Set.of(userRole));
             userRepository.save(user);
             return login(email, password);
         }
@@ -50,14 +54,12 @@ public class AuthServiceImpl implements AuthService {
     public AuthResponse login(String username, String password) {
         var authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
         if (authentication.isAuthenticated()) {
-            var roles = authentication.getAuthorities().stream()
-                    .map(GrantedAuthority::getAuthority)
-                    .toList();
+            var user = (org.springframework.security.core.userdetails.User) authentication.getPrincipal();
             return AuthResponse.builder()
                     .accessTokenExpiration(jwtProperties.accessTokenExpiration())
                     .refreshTokenExpiration(jwtProperties.refreshTokenExpiration())
-                    .accessToken(jwtService.generateAccessToken(username, roles))
-                    .refreshToken(refreshTokenService.createRefreshToken(username).getToken())
+                    .accessToken(jwtService.generateAccessToken(user.getUsername(), user.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList()))
+                    .refreshToken(refreshTokenService.createRefreshToken(user.getUsername()).getToken())
                     .build();
         } else {
             throw new AuthException(ErrorDTO.builder().message("Authentication failed").timestamp(new Date()).build());
@@ -75,7 +77,7 @@ public class AuthServiceImpl implements AuthService {
                 .map(RefreshToken::getUser)
                 .map(user -> AuthResponse.builder()
                         .accessTokenExpiration(jwtProperties.accessTokenExpiration())
-                        .accessToken(jwtService.generateAccessToken(user.getUsername(), user.getRoles().stream().toList()))
+                        .accessToken(jwtService.generateAccessToken(user.getUsername(), user.getRoles().stream().map(Role::getName).toList()))
                         .build())
                 .orElseThrow(() -> {
                     refreshTokenService.deleteRefreshToken(refreshToken);
