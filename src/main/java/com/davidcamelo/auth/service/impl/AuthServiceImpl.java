@@ -36,7 +36,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public AuthResponse signUp(String name, String lastName, String email, String password) {
         if (userRepository.findByEmail(email).isEmpty()) {
-            User user = new User();
+            var user = new User();
             user.setName(name);
             user.setLastName(lastName);
             user.setEmail(email);
