@@ -128,9 +128,9 @@
 				</configuration>
 			</plugin>
 			<plugin>
-				<groupId>org.hibernate.orm.tooling</groupId>
-				<artifactId>hibernate-enhance-maven-plugin</artifactId>
-				<version>6.6.38.Final</version>
+				<groupId>org.hibernate.orm</groupId>
+				<artifactId>hibernate-maven-plugin</artifactId>
+				<version>7.1.9.Final</version>
 				<executions>
 					<execution>
 						<id>enhance</id>
@@ -138,8 +138,6 @@
 							<goal>enhance</goal>
 						</goals>
 						<configuration>
-							<enableLazyInitialization>true</enableLazyInitialization>
-							<enableDirtyTracking>true</enableDirtyTracking>
 							<enableAssociationManagement>true</enableAssociationManagement>
 						</configuration>
 					</execution>
